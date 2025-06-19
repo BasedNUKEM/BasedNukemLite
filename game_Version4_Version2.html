@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>BasedNUKEMlite - Blockchain Vigilante</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    /* 
+      Updated to replace old green (#00ff41) with neon blue (#00bcff)
+      Ensures responsiveness for desktop and mobile
+    */
+    * {
+      margin: 0; padding: 0; box-sizing: border-box;
+    }
+    body {
+      background: radial-gradient(circle at center, #0a0a23 0%, #1a1a3e 50%, #000 100%);
+      color: #00bcff; /* changed from #00ff41 */
+      font-family: 'Courier New', monospace;
+      overflow: hidden; user-select: none; cursor: crosshair;
+    }
+    #gameContainer {
+      display: flex; flex-direction: column; justify-content: center; align-items: center;
+      min-height: 100vh; position: relative; padding: 0.5rem;
+    }
+    #gameCanvas {
+      border: 3px solid #ff0080; border-radius: 15px;
+      box-shadow: 0 0 20px rgba(255, 0, 128, 0.8), inset 0 0 20px rgba(0, 188, 255, 0.2);
+      background: #000; filter: contrast(1.2) brightness(1.1);
+    }
+    #ui {
+      display: flex; justify-content: space-between;
+      width: 900px; max-width: 95vw; margin-top: 0.5rem; padding: 0.5rem;
+      background: linear-gradient(45deg, rgba(0, 188, 255, 0.1), rgba(255, 0, 128, 0.1));
+      border: 2px solid #00bcff; /* changed from #00ff41 */
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0, 188, 255, 0.5);
+      font-size: 0.95rem;
+    }
+    .ui-element {
+      color: #00bcff; /* changed from #00ff41 */
+      font-weight: bold; text-shadow: 0 0 10px #00bcff; /* changed from #00ff41 */
+      text-transform: uppercase;
+    }
+    .ui-value { color: #ff0080; text-shadow: 0 0 10px #ff0080; }
+    #startScreen, #gameOverScreen {
+      position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+      display: flex; flex-direction: column; justify-content: center; align-items: center;
+      text-align: center; background: rgba(0, 0, 0, 0.95);
+      animation: fadein 1s forwards;
+    }
+    @keyframes fadein { 0% {opacity:0;} 100% {opacity:1;} }
+    .title {
+      font-size: 48px; background: linear-gradient(45deg, #ff0080, #00bcff, #ff0080);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+      text-shadow: 0 0 30px rgba(255, 0, 128, 0.8); margin-bottom: 0.75rem;
+      animation: glow 2s ease-in-out infinite alternate;
+    }
+    @keyframes glow {
+      0% {
+        filter: brightness(1);
+      }
+      100% {
+        filter: brightness(1.2) drop-shadow(0 0 20px #00bcff);
+      }
+    }
+    .subtitle {
+      font-size: 1rem; color: #00bcff; margin-bottom: 0.5rem;
+      text-shadow: 0 0 10px #00bcff;
+    }
+    .quote {
+      font-size: 0.85rem; color: #ff0080; font-style: italic; margin-bottom: 1rem;
+      text-shadow: 0 0 10px #ff0080;
+    }
+    .button {
+      background: linear-gradient(45deg, #ff0080, #ff4000, #ff0080);
+      border: 2px solid #00bcff; /* changed from #00ff41 */
+      padding: 0.75rem 1.5rem; font-size: 1rem;
+      color: #00bcff; /* changed from #00ff41 */
+      font-family: 'Courier New', monospace; font-weight: bold;
+      border-radius: 10px; cursor: pointer; margin: 0.5rem; transition: all 0.3s;
+      text-transform: uppercase; text-shadow: 0 0 10px #00bcff; 
+      box-shadow: 0 0 15px rgba(255, 0, 128, 0.5);
+    }
+    .button:hover {
+      transform: scale(1.05);
+      box-shadow: 0 5px 25px rgba(0, 188, 255, 0.8);
+      background: linear-gradient(45deg, #00bcff, #ff0080, #00bcff);
+    }
+    #weaponDisplay {
+      position: absolute; top: 1rem; right: 1rem; color: #ff0080;
+      font-size: 1rem; font-weight: bold; text-shadow: 0 0 10px #ff0080;
+    }
+    #nukemQuotes {
+      position: absolute; bottom: 6rem; left: 50%; transform: translateX(-50%);
+      color: #00bcff; /* changed from #00ff41 */
+      font-size: 1rem; font-weight: bold; text-align: center;
+      text-shadow: 0 0 10px #00bcff; 
+      opacity: 0; transition: opacity 0.5s;
+    }
+    @media (max-width: 768px) {
+      #gameCanvas { width: 95vw; height: auto; }
+      #ui { width: 95vw; padding: 0.5rem; }
+      .title { font-size: 36px; }
+      .subtitle { font-size: 0.9rem; }
+      .quote { font-size: 0.8rem; }
+    }
+  </style>
+</head>
+<body>
+  <div id="gameContainer">
+    <canvas id="gameCanvas" width="900" height="700"></canvas>
+    <div id="ui">
+      <div class="ui-element">Based Score: <span class="ui-value" id="score">0</span></div>
+      <div class="ui-element">Health: <span class="ui-value" id="health">100</span></div>
+      <div class="ui-element">Lives: <span class="ui-value" id="lives">3</span></div>
+      <div class="ui-element">Wave: <span class="ui-value" id="level">1</span></div>
+      <div class="ui-element">Combo: <span class="ui-value" id="combo">0</span></div>
+    </div>
+    <div id="weaponDisplay">Weapon: NUKEM PISTOL</div>
+    <div id="nukemQuotes"></div>
+    <div id="startScreen">
+      <h1 class="title">BasedNUKEMlite</h1>
+      <p class="subtitle">Relentless Blockchain Vigilante</p>
+      <p class="quote">"Time to Nuke 'em and chew bubblegum... and I'm all outta gum!"</p>
+      <p class="subtitle">Protect the Base Network from digital degenerates and scammers!</p>
+      <button class="button" onclick="startGame()">Initiate NUKEM Protocol</button>
+      <button class="button" onclick="alert('Controls: Move with Arrows/WASD, Jump with Space, Shoot with Z, Switch Weapon with X, Dash with Shift.')">Control Briefing</button>
+      <button class="button" onclick="alert('NUKEM LORE: Born from the ashes of theft, unstoppable vigilante, unstoppable code!')">NUKEM Lore Database</button>
+    </div>
+    <div id="gameOverScreen" style="display:none;">
+      <h1 class="title">MISSION STATUS</h1>
+      <p class="subtitle">Final Based Score: <span class="ui-value" id="finalScore">0</span></p>
+      <p class="subtitle">Scammers Eliminated: <span class="ui-value" id="scammersKilled">0</span></p>
+      <p class="quote" id="nukemFinalQuote"></p>
+      <button class="button" onclick="restartGame()">Redeploy NUKEM</button>
+      <button class="button" onclick="alert('Stats screen not yet implemented!')">Mission Stats</button>
+    </div>
+  </div>
+
+  <script>
+    // Single-file game with green replaced by blue for improved styling
+    const game = {
+      canvas: null, ctx: null, running: false,
+      score: 0, health: 100, lives: 3, level: 1, combo: 0, scammersKilled: 0,
+      currentWeapon: 0, weapons: ['NUKEM PISTOL','SCAMMER SHOTGUN','PLASMA DEBUGGER','NUKEM CANNON'],
+      weaponAmmo: [999,50,30,10], keys:{}, player:null, bullets:[], enemies:[],
+      lastTime:0, quotesEl:null
+    };
+
+    const nukemQuotes = {
+      kills: ["Piece of digital cake!","Eat quantum lead!","Down you go, degenerate!","Another scammer bites the dust!","Rest in pieces, shitcoin!","Game over, script kiddie!","That's what I call digital decontamination!"],
+      damage: ["That tickles!","Nice try, amateur!","Is that all you got?","My quantum armor laughs at you!"],
+      weaponSwitch: ["Time for plan B, baby!","Let's try something with more BOOM!","Switching to quantum mode!"],
+      gameOver: ["Damn, they got lucky!","The network remembers my sacrifice!","I'll be back, scumbags!"],
+      victory: ["Damn, I'm good at this!","Hail to the King, baby!","Stay Based, stay safe!"]
+    };
+
+    class Player {
+      constructor() {
+        this.x=100; this.y=600; this.w=36; this.h=54;
+        this.vx=0; this.vy=0; this.grounded=false;
+        this.direction=1; this.shootCooldown=0; this.dashCooldown=0;
+      }
+      update() {
+        if(game.keys['ArrowLeft']||game.keys['a']) { this.vx=-6; this.direction=-1; }
+        else if(game.keys['ArrowRight']||game.keys['d']){ this.vx=6; this.direction=1; }
+        else this.vx*=0.85;
+        if((game.keys['ArrowUp']||game.keys['w']||game.keys[' ']) && this.grounded){ 
+          this.vy=-16; this.grounded=false; 
+        }
+        if(game.keys['Shift'] && this.dashCooldown<=0){ this.dash(); }
+
+        this.vy+=0.8;
+        this.x+=this.vx; this.y+=this.vy;
+        if(this.y>game.canvas.height-this.h-60){ this.y=game.canvas.height-this.h-60; this.vy=0; this.grounded=true; } 
+        if(this.x<0) this.x=0; 
+        if(this.x>game.canvas.width-this.w) this.x=game.canvas.width-this.w;
+
+        if(this.shootCooldown>0) this.shootCooldown--;
+        if(this.dashCooldown>0) this.dashCooldown--;
+      }
+      dash() {
+        this.dashCooldown=60; // short dash
+        this.x+=this.direction*50;
+      }
+      draw() {
+        const ctx=game.ctx;
+        ctx.save();
+        // change color to new neon blue fill for the player
+        ctx.fillStyle="#00bcff";
+        ctx.fillRect(this.x, this.y, this.w, this.h); 
+        ctx.restore();
+      }
+      shoot() {
+        if(this.shootCooldown>0) return;
+        if(game.weaponAmmo[game.currentWeapon]<=0 && game.currentWeapon>0) return;
+        let speed=12; let dmg=1; 
+        if(game.currentWeapon===1){ speed=10; dmg=2; }
+        if(game.currentWeapon===2){ speed=15; dmg=3; }
+        if(game.currentWeapon===3){ speed=8; dmg=10; }
+
+        game.bullets.push(new Bullet(this.x+this.w/2+(this.direction*25),this.y+this.h/2,this.direction*speed,0,dmg));
+        if(game.currentWeapon>0) game.weaponAmmo[game.currentWeapon]--;
+        this.shootCooldown=10;
+      }
+      switchWeapon(){ 
+        game.currentWeapon=(game.currentWeapon+1)%game.weapons.length;
+        document.getElementById("weaponDisplay").textContent="Weapon: "+game.weapons[game.currentWeapon];
+        showNukemQuote('weaponSwitch');
+      }
+    }
+
+    class Bullet {
+      constructor(x,y,vx,vy,dmg){
+        this.x=x; this.y=y; this.vx=vx; this.vy=vy; this.dmg=dmg; this.r=4;
+      }
+      update(){
+        this.x+=this.vx; this.y+=this.vy;
+      }
+      draw(){
+        const ctx=game.ctx;
+        ctx.save();
+        ctx.fillStyle="#ffff00";
+        ctx.beginPath(); ctx.arc(this.x,this.y,this.r,0,Math.PI*2); ctx.fill();
+        ctx.restore();
+      }
+    }
+
+    function startGame(){
+      document.getElementById('startScreen').style.display='none';
+      game.player=new Player();
+      game.quotesEl=document.getElementById('nukemQuotes');
+      game.running=true; requestAnimationFrame(loop);
+    }
+    function restartGame(){
+      game.score=0; game.health=100; game.lives=3; game.level=1; game.combo=0; game.scammersKilled=0;
+      document.getElementById('gameOverScreen').style.display='none';
+      startGame();
+    }
+    function loop(timestamp){
+      if(!game.lastTime) game.lastTime=timestamp;
+      const dt=(timestamp-game.lastTime)/1000; game.lastTime=timestamp;
+      if(game.running) update(dt); render();
+      if(game.running) requestAnimationFrame(loop);
+    }
+    function update(dt){
+      game.player.update();
+      for(let b of game.bullets) b.update();
+      // Basic bullet cleanup
+      game.bullets=game.bullets.filter(b=>b.x>0 && b.x<game.canvas.width && b.y>0 && b.y<game.canvas.height);
+    }
+    function render(){
+      game.ctx.clearRect(0,0,game.canvas.width,game.canvas.height);
+      game.player.draw();
+      for(let b of game.bullets) b.draw();
+    }
+    function showNukemQuote(cat){
+      if(!nukemQuotes[cat]) return;
+      const quote=nukemQuotes[cat][Math.floor(Math.random()*nukemQuotes[cat].length)];
+      game.quotesEl.textContent='"'+quote+'"';
+      game.quotesEl.style.opacity='1';
+      setTimeout(()=>{ game.quotesEl.style.opacity='0'; },2000);
+    }
+    document.addEventListener('keydown',e=>{
+      game.keys[e.key]=true;
+      if(e.key==='z' || e.key==='Control') game.player.shoot();
+      if(e.key==='x') game.player.switchWeapon();
+    });
+    document.addEventListener('keyup',e=>{ game.keys[e.key]=false; });
+    window.onload=function(){
+      game.canvas=document.getElementById('gameCanvas');
+      game.ctx=game.canvas.getContext('2d');
+    };
+  </script>
+</body>
+</html>
